@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body class="loggedin">
+    <body style="background-color: bisque;"></body>
+
+    <nav class="navtop">
+        <div>
+            <h1>Panel administratora sanatorium; <a href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i>wyloguj się</a>
+            </h1> 
+        </div>
+    </nav>
+
+    <h4>Cześć {{ username }}! Oto dostępne dla ciebie czynności.</h4>
+    <ul>
+    <li><a href="{{ url_for('remove_employee') }}">usuwanie pracownika</a></li>
+    <li><a href="{{ url_for('delete_patient_treatment') }}"> Usuwanie rezerwacji zabiegu dla gościa</a></li>
+    <li><a href="{{ url_for('treatment_history') }}"> Wyszukiwanie historii odbytych zabiegów gościa</a></li>
+    <li><a href="{{ url_for('add_position') }}"> Dodawanie nowych stanowisk</a></li>
+    <li><a href="{{ url_for('remove_position') }}"> Usuwanie stanowisk</a></li>
+    <li><a href="{{ url_for('show_positions') }}"> Wyswietlanie wszystkich stanowisk</a></li>
+    <li><a href="{{ url_for('add_employee') }}"> dodawanie pracownika</a></li>
+    <li><a href="{{ url_for('show_employees') }}"> wyswietlanie pracowników</a></li>
+    <li><a href="{{ url_for('add_medical_equipment') }}"> dodawanie sprzętu medycznego</a></li>
+    <li><a href="{{ url_for('delete_equipment') }}"> usuwanie sprzętu medycznego</a></li>
+    <li><a href="{{ url_for('show_equipment') }}"> wyswietlanie sprzętu w kolejności najbardziej potrzebujących serwisu</a></li>
+    <li><a href="{{ url_for('add_treatment_room') }}"> dodawanie sal zabiegowych</a></li>
+    <li><a href="{{ url_for('delete_treatment_room') }}"> usuwanie sal zabiegowych</a></li>
+    <li><a href="{{ url_for('show_treatment_rooms') }}"> wyswietlanie sal zabiegowych</a></li>
+    <li><a href="{{ url_for('add_illness') }}"> dodawanie chorob</a></li>
+    <li><a href="{{ url_for('delete_illness') }}"> usuwanie chorob</a></li>
+    <li><a href="{{ url_for('show_illnesses') }}"> wyswietlanie chorob</a></li>
+    <li><a href="{{ url_for('add_healing') }}"> dodawanie leczenia</a></li>
+    <li><a href="{{ url_for('delete_healing') }}"> usuwanie leczenia</a></li>
+    <li><a href="{{ url_for('show_healing') }}"> wyświetlanie leczenia</a></li>
+    <li><a href="{{ url_for('add_client') }}"> dodawanie klienta</a></li>
+
+
+
+
+
+
+
+
+
+
+
+    </ul>
+</body>
+</html>
