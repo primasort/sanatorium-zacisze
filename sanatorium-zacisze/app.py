@@ -741,22 +741,22 @@ def add_client():
     id_rezerwacji_parkingu = request.form.get('id_rezerwacji_parkingu')
     numer_pokoju = request.form.get('numer_pokoju')
     adres = request.form.get('adres')
+    haslo = request.form.get('haslo')
 
-    # Sprawdzanie, czy klient o podanym Peselu już istnieje w bazie
-    query = "SELECT COUNT(*) FROM klienci WHERE Pesel = %s"
-    cursor.execute(query, (pesel,))
-    result = cursor.fetchone()
-    if result['COUNT(*)'] > 0:
-        msg = 'Błąd: Klient o podanym Peselu już istnieje w bazie'
-        return render_template('adding_client.html', msg=msg)
+    if not id_rezerwacji_parkingu:
+        id_rezerwacji_parkingu = None
+    else:
+        id_rezerwacji_parkingu = int(id_rezerwacji_parkingu)
 
-    # Sprawdzanie, czy pokój o podanym numerze i turnusie już jest zajęty
-    query = "SELECT COUNT(*) FROM klienci WHERE Numer_pokoju = %s AND ID_turnusu = %s"
-    cursor.execute(query, (numer_pokoju, id_turnusu))
-    result = cursor.fetchone()
-    if result['COUNT(*)'] > 0:
-        msg = 'Błąd: Pokój o podanym numerze i turnusie jest już zajęty'
-        return render_template('adding_client.html', msg=msg)
+    # Pobieranie maksymalnej wartości IDklient i dodanie 1
+
+    query = "SELECT MAX(IDklient) FROM klienci"
+    cursor.execute(query)
+    max_id = cursor.fetchone()
+    if not max_id or not max_id.get('MAX(IDklient)'):
+        IDklient = 1
+    else:
+        IDklient = max_id['MAX(IDklient)'] + 1
 
     # Pobieranie dostępnych wartości ID_turnusu i Numer_pokoju
     query = "SELECT ID_turnusu FROM terminarz_noclegów"
@@ -767,23 +767,35 @@ def add_client():
     cursor.execute(query)
     available_numer_pokoju = [row['Numer_pokoju'] for row in cursor.fetchall()]
 
-    if id_turnusu not in available_id_turnusu:
-        id_turnusu = None
-    if numer_pokoju not in available_numer_pokoju:
-        numer_pokoju = None
+    # Sprawdzanie, czy klient o podanym Peselu już istnieje w bazie
+    query = "SELECT COUNT(*) FROM klienci WHERE Pesel = %s"
+    cursor.execute(query, (pesel,))
+    result = cursor.fetchone()
+    if result['COUNT(*)'] > 0:
+        msg = 'Błąd: Klient o podanym Peselu już istnieje w bazie'
+        return render_template('adding_client.html', msg=msg, available_id_turnusu = available_id_turnusu, available_numer_pokoju = available_numer_pokoju )
+
+    # Sprawdzanie, czy pokój o podanym numerze i turnusie już jest zajęty
+    query = "SELECT COUNT(*) FROM klienci WHERE Numer_pokoju = %s AND ID_turnusu = %s"
+    cursor.execute(query, (numer_pokoju, id_turnusu))
+    result = cursor.fetchone()
+    if result['COUNT(*)'] > 0:
+        msg = 'Błąd: Pokój o podanym numerze i turnusie jest już zajęty'
+        return render_template('adding_client.html', msg=msg, available_id_turnusu = available_id_turnusu, available_numer_pokoju = available_numer_pokoju )
 
     if pesel is None:
         msg = 'Błąd: brak wartości PESEL w formularzu'
-        return render_template('adding_client.html', msg=msg)
+        return render_template('adding_client.html', msg=msg, available_id_turnusu = available_id_turnusu, available_numer_pokoju = available_numer_pokoju )
 
-    query = "INSERT INTO klienci (IDklient, Pesel, Imie, Nazwisko, Data_urodzenia, Adres, id_rezerwacji_parkingu, ID_turnusu, Numer_pokoju) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)"
-    values = (IDklient, pesel, imie, nazwisko, data_urodzenia, adres, id_rezerwacji_parkingu, id_turnusu, numer_pokoju)
+    query = "INSERT INTO klienci (IDklient, Pesel, Imie, Nazwisko, Haslo, Data_urodzenia, Adres, id_rezerwacji_parkingu, ID_turnusu, Numer_pokoju) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+    values = (IDklient, pesel, imie, nazwisko, haslo, data_urodzenia, adres, id_rezerwacji_parkingu, id_turnusu, numer_pokoju)
     cursor.execute(query, values)
     db.commit()
 
     msg = 'Dodano klienta'
 
-    return render_template('adding_client.html', msg=msg)
+    return render_template('adding_client.html', msg=msg, available_id_turnusu = available_id_turnusu, available_numer_pokoju = available_numer_pokoju )
+
 
 
 if __name__ == '__main__':
