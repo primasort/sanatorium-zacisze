@@ -1132,6 +1132,31 @@ def show_free_park():
 
     return render_template('showing_free_park.html', msg=msg)
 
+# wyswietlanie wolnych pokoi
+@app.route('/show_free_room', methods=['GET'])
+def show_free_room():
+    db = mysql.connect()
+    cursor = db.cursor(pymysql.cursors.DictCursor)
+    ID_turnusu = request.args.get('ID_turnusu')
+    standart = request.args.get('room_standart')
+
+    query = """
+            SELECT standart, numer_pokoju from pokoje
+            WHERE numer_pokoju NOT IN (SELECT numer_pokoju FROM klienci where ID_turnusu = %s) AND standart = %s
+            LIMIT 1
+        """
+    values = (ID_turnusu, standart)
+    cursor.execute(query, values)
+    result = cursor.fetchall()
+    miejsca = []
+    for row in result:
+        miejsca.append({
+            'standart': row['standart'],
+            'numer': row['numer_pokoju']
+        })
+
+    return render_template('showing_free_room.html', ID_turnusu=ID_turnusu, miejsca=miejsca)
+
 # wyswietlanie zabiegow
 @app.route('/show_my_schedule', methods=['GET'])
 def show_my_schedule():

@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Free rooms</title>
+  </head>
+  <body>
+    <body style="background-color: bisque;"></body>
+    <h1>Wolne pokoje: </h1>
+    <form action="{{ url_for('show_free_room') }}" method="get">
+      <label for="ID_turnusu">Turnus ID:</label>
+      <input type="text" name="ID_turnusu" id="ID_turnusu">
+      <label for="room_standart">Standart:</label>
+      <input type="text" name="room_standart" id="room_standart">
+      <input type="submit" value="Pokaż wolny pokoj">
+    </form>
+    {% if miejsca %}
+      <ul>
+        {% for miejsce in miejsca %}
+          <li>Pokoj numer {{ miejsce['numer'] }} - standard {{ miejsce['standart'] }}</li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p>No free rooms in chosen configuration {{ treatment_id }}.</p>
+    {% endif %}
+
+    <a href ="{{url_for('admin_panel')}}">Wróć do panelu</a>
+  </body>
+</html>
+
