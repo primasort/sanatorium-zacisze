@@ -1210,6 +1210,93 @@ def show_my_booking():
         })
 
     return render_template('showing_my_booking.html', guest_id=ID_klienta, reservations=reservations)
+@app.route('/add_parking', methods=['POST', 'GET'])
+def add_parking():
+    db = mysql.connect()
+    cursor = db.cursor(pymysql.cursors.DictCursor)
+    msg = ''
+
+    if request.method == 'POST' and 'rodzaj_strefy' in request.form:
+        rodzaj_strefy = request.form['rodzaj_strefy']
+        czy_zarezerwowane = 0
+
+        # Retrieve the maximum value of 'numer_miejsca' from the database
+        cursor.execute('SELECT MAX(numer_miejsca) AS max_id FROM parking')
+        result = cursor.fetchone()
+        max_id = result['max_id']
+
+        # Increment the maximum value by one to create a new 'numer_miejsca' value
+        new_id = max_id + 1 if max_id is not None else 1
+
+        # Insert the new parking into the database with the new 'numer_miejsca' value
+        query = "INSERT INTO parking (numer_miejsca, rodzaj_strefy, czy_zarezerwowane) VALUES (%s, %s, %s)"
+        values = (new_id, rodzaj_strefy, czy_zarezerwowane)
+        cursor.execute(query, values)
+        db.commit()
+
+        msg = 'Dodano miejsce parkingowe'
+
+    # Close the database connection and return the response
+    cursor.close()
+    db.close()
+    return render_template('adding_parking.html', msg=msg)
+
+
+# usuwanie chorob
+@app.route('/delete_parking', methods=['GET', 'POST'])
+def delete_parking():
+    db = mysql.connect()
+    cursor = db.cursor(pymysql.cursors.DictCursor)
+    msg = ''
+
+    if request.method == 'POST' and 'id' in request.form:
+        id = request.form['id']
+
+        # Check if the parking is currently reserved
+        query = "SELECT * FROM parking WHERE numer_miejsca = %s"
+        values = (id,)
+        cursor.execute(query, values)
+        reservation = cursor.fetchone()
+
+        if reservation['Czy_zarezerwowane'] == 1:
+            msg = 'Nie można usunąć miejsca, ponieważ jest obecnie zajęte.'
+        else:
+            # Delete the lot from the table
+            query = "SELECT * FROM parking WHERE numer_miejsca = %s"
+            values = (id,)
+            cursor.execute(query, values)
+            deleting = cursor.fetchone()
+
+            if deleting:
+                query = "DELETE FROM parking WHERE numer_miejsca = %s"
+                cursor.execute(query, values)
+                db.commit()
+                msg = 'Usunięto parking'
+            else:
+                msg = 'Nie znaleziono takiego miejsca'
+
+    return render_template('deleting_parking.html', msg=msg)
+
+
+# wyswietlanie chorob
+@app.route('/show_parkings', methods=['GET'])
+def show_parkings():
+    db = mysql.connect()
+    cursor = db.cursor(pymysql.cursors.DictCursor)
+    positions = []
+
+    query = "SELECT * FROM parking"
+    cursor.execute(query)
+
+    miejsca = cursor.fetchall()
+
+    result = ""
+    for miejsce in miejsca:
+        result += str(miejsce) + "\n"
+
+    msg = result
+
+    return render_template('showing_parkings.html', msg=msg)
 
 
 if __name__ == '__main__':

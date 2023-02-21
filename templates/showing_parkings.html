@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Parkings</title>
+</head>
+<body>
+    <body style="background-color: bisque;"></body>
+
+	<h1>Lista wszystkich miejsc parkingowych</h1>
+	{% if msg %}
+		<pre>{{ msg }}</pre>
+	{% else %}
+		<p>No parking spaces found</p>
+	{% endif %}
+
+    <a href ="{{url_for('admin_panel')}}">Wróć do panelu</a>
+</body>
+</html>
