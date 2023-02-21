@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Dodaj wydarzenie</title>
+  </head>
+  <body>
+    <body style="background-color: bisque;">
+    <h1>Dodaj wydarzenie</h1>
+    <form action="/add_event" method="POST">
+      <label for="terminr">Termin rozpoczęcia:</label>
+      <input type="datetime-local" id="terminr" name="terminr"><br><br>
+
+      <label for="terminz">Termin zakończenia:</label>
+      <input type="datetime-local" id="terminz" name="terminz"><br><br>
+
+      <label for="miejsce">Miejsce:</label>
+      <select id="miejsce" name="miejsce">
+        {% for room in room_numbers %}
+        <option value="{{ room }}">{{ room }}</option>
+        {% endfor %}
+      </select><br><br>
+
+      <label for="nazwa">Nazwa wydarzenia:</label>
+      <input type="text" id="nazwa" name="nazwa"><br><br>
+
+      <label for="rodzaj">Rodzaj wydarzenia:</label>
+      <input type="text" id="rodzaj" name="rodzaj"><br><br>
+
+      <label for="nazwa_wydarzenia">nazwa_wydarzenia:</label>
+      <input type="text" id="nazwa_wydarzenia" name="nazwa_wydarzenia"><br><br>
+
+      <input type="submit" value="Dodaj wydarzenie">
+    </form>
+
+    <p>{{ msg }}</p>
+    <a href ="{{url_for('admin_panel')}}">Wróć do panelu</a>
+  </body>
+</html>

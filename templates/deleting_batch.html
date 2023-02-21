@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Usuń turnus</title>
+  </head>
+  <body>
+    <body style="background-color: bisque;">
+    <h1>Usuwanie turnusu</h1>
+    {% if msg %}
+      <p>{{ msg }}</p>
+    {% endif %}
+    <form method="POST" action="{{ url_for('delete_batch') }}">
+      <label for="id">ID turnusu:</label>
+      <input type="text" id="id" name="id">
+      <br>
+      <input type="submit" value="Usuń turnus">
+      <a href ="{{url_for('admin_panel')}}">Wróć do panelu</a>
+    </form>
+  </body>
+</html>
