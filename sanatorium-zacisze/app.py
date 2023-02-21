@@ -3,18 +3,20 @@ from flaskext.mysql import MySQL
 import pymysql
 
 app = Flask(__name__)
-app.secret_key = 'abc'
+app.secret_key = 'pass123'
 
 mysql = MySQL()
 app.config['MYSQL_DATABASE_USER'] = 'root'
-app.config['MYSQL_DATABASE_PASSWORD'] = 'admin'
+app.config['MYSQL_DATABASE_PASSWORD'] = 'pass123'
 app.config['MYSQL_DATABASE_DB'] = 'sanatorium'
 app.config['MYSQL_DATABASE_HOST'] = 'localhost'
 mysql.init_app(app)
 
+
 @app.route('/', methods=['GET', 'POST'])
 def home():
     return render_template('home.html')
+
 
 @app.route('/logout')
 def logout():
@@ -24,6 +26,7 @@ def logout():
 
     return redirect(url_for('home'))
 
+
 @app.route('/user_login', methods=['GET', 'POST'])
 def user_login():
     db = mysql.connect()
@@ -31,7 +34,7 @@ def user_login():
     msg = ''
 
     # actual login part
-    if request.method == 'POST'and 'username' in request.form and 'password' in request.form:
+    if request.method == 'POST' and 'username' in request.form and 'password' in request.form:
         username = request.form['username']
         password = request.form['password']
 
@@ -50,6 +53,7 @@ def user_login():
 
     return render_template('user_login.html', msg=msg)
 
+
 @app.route('/worker_login', methods=['GET', 'POST'])
 def worker_login():
     db = mysql.connect()
@@ -57,7 +61,7 @@ def worker_login():
     msg = ''
 
     # actual login part
-    if request.method == 'POST'and 'username' in request.form and 'password' in request.form:
+    if request.method == 'POST' and 'username' in request.form and 'password' in request.form:
         username = request.form['username']
         password = request.form['password']
 
@@ -76,6 +80,7 @@ def worker_login():
 
     return render_template('worker_login.html', msg=msg)
 
+
 @app.route('/admin_login', methods=['GET', 'POST'])
 def admin_login():
     db = mysql.connect()
@@ -83,11 +88,12 @@ def admin_login():
     msg = ''
 
     # actual login part
-    if request.method == 'POST'and 'username' in request.form and 'password' in request.form:
+    if request.method == 'POST' and 'username' in request.form and 'password' in request.form:
         username = request.form['username']
         password = request.form['password']
 
-        cursor.execute('SELECT * FROM pracownicy WHERE Pesel = %s AND Haslo = %s AND Czy_admin = 1', (username, password))
+        cursor.execute('SELECT * FROM pracownicy WHERE Pesel = %s AND Haslo = %s AND Czy_admin = 1',
+                       (username, password))
         account = cursor.fetchone()
 
         # logic after user give us data
@@ -102,6 +108,7 @@ def admin_login():
 
     return render_template('admin_login.html', msg=msg)
 
+
 @app.route('/user_panel', methods=['GET', 'POST'])
 def user_panel():
     # checking if user is logged 
@@ -109,7 +116,8 @@ def user_panel():
         return render_template('user_panel.html', username=session['username'])
     else:
         return redirect(url_for('user_login'))
-    
+
+
 @app.route('/worker_panel', methods=['GET', 'POST'])
 def worker_panel():
     # checking if worker is logged 
@@ -117,7 +125,8 @@ def worker_panel():
         return render_template('worker_panel.html', username=session['username'])
     else:
         return redirect(url_for('worker_login'))
-    
+
+
 @app.route('/admin_panel', methods=['GET', 'POST'])
 def admin_panel():
     # checking if worker is logged 
@@ -126,6 +135,7 @@ def admin_panel():
     else:
         return redirect(url_for('worker_login'))
 
+
 # usuwanie
 @app.route('/remove_employee', methods=['GET', 'POST'])
 def remove_employee():
@@ -133,7 +143,7 @@ def remove_employee():
     cursor = db.cursor(pymysql.cursors.DictCursor)
     msg = ''
 
-    if request.method == 'POST'and 'pesel' in request.form:
+    if request.method == 'POST' and 'pesel' in request.form:
         pesel = request.form['pesel']
         id = request.form['id']
 
@@ -154,14 +164,46 @@ def remove_employee():
     return render_template('removing_employee.html', msg=msg)
 
 
-#usuwanie wizyt danego pacjenta
+# dodawanie wizyt danego pacjenta
+@app.route('/add_patient_treatment', methods=['GET', 'POST'])
+def add_patient_treatment():
+    db = mysql.connect()
+    cursor = db.cursor(pymysql.cursors.DictCursor)
+    msg = ''
+
+    if request.method == 'POST' and 'pesel' in request.form:
+        pesel = request.form['pesel']
+
+        query = "SELECT * FROM klienci WHERE pesel = %s"
+        values = (pesel,)
+        cursor.execute(query, values)
+
+        klient = cursor.fetchone()
+        if klient:
+            id = request.form['id']
+            termin = request.form['termin']
+            rodzaj = request.form['rodzaj']
+            id_prac = request.form['id_pracownika']
+            id_pacj = request.form['id_pacjenta']
+
+            query = "INSERT INTO terminarz_zabiegow (ID_wizyty, Termin, Rodzaj_zabiegu, ID_pracownika, ID_pacjenta) VALUES (%s, %s, %s, %s, %s)"
+            values = (id, termin, rodzaj, id_prac, id_pacj)
+            cursor.execute((query, values))
+            db.commit()
+            msg = 'Dodano zabieg'
+        else:
+            msg = 'Nie znaleziono takiego pacjenta'
+
+    return render_template('add_patient_treatment.html', msg=msg)
+
+# usuwanie wizyt danego pacjenta
 @app.route('/delete_patient_treatment', methods=['GET', 'POST'])
 def delete_patient_treatment():
     db = mysql.connect()
     cursor = db.cursor(pymysql.cursors.DictCursor)
     msg = ''
 
-    if request.method == 'POST'and 'pesel' in request.form:
+    if request.method == 'POST' and 'pesel' in request.form:
         pesel = request.form['pesel']
 
         query = "SELECT * FROM klienci WHERE pesel = %s"
@@ -175,7 +217,7 @@ def delete_patient_treatment():
             cursor.execute(query, values)
 
             zabiegi = cursor.fetchall()
-                        
+
             if zabiegi:
                 query = "DELETE FROM terminarz_zabiegow WHERE ID_pacjenta = %s"
 
@@ -189,18 +231,48 @@ def delete_patient_treatment():
 
         else:
             msg = 'Nie znaleziono takiego pacjenta'
-        
+
     return render_template('delete_patient_treatment.html', msg=msg)
+
+
+# wyświetlanie zabiegów danego lekarza
+@app.route('/show_doctor_treatments', methods=['GET'])
+def show_doctor_treatments():
+    db = mysql.connect()
+    cursor = db.cursor(pymysql.cursors.DictCursor)
+    ID_pracownika = request.args.get('ID_pracownika')
+
+    # Retrieve the patient's treatment history
+    query = """
+        SELECT t.termin, t.ID_wizyty 
+        FROM pracownicy p 
+        JOIN terminarz_zabiegow t ON p.idpracownicy = t.ID_pracownika 
+        WHERE p.idpracownicy = %s 
+        ORDER BY t.termin DESC
+    """
+    values = (ID_pracownika,)
+    cursor.execute(query, values)
+    result = cursor.fetchall()
+    treatment_schedule = []
+    for row in result:
+        treatment_schedule.append({
+            'termin': row['termin'],
+            'id': row['ID_wizyty']
+        })
+
+    return render_template('showing_doc_treatments.html', employee_id=ID_pracownika, treatment_schedule=treatment_schedule)
+
 
 # wyświetlanie wszystkich zabiegów danego pacjenta
 from flask import Flask, render_template
+
 
 @app.route('/treatment_history', methods=['GET'])
 def treatment_history():
     db = mysql.connect()
     cursor = db.cursor(pymysql.cursors.DictCursor)
     ID_pacjenta = request.args.get('ID_pacjenta')
-	
+
     # Retrieve the patient's treatment history
     query = """
         SELECT t.termin, l.nazwa_zabiegu
@@ -219,8 +291,36 @@ def treatment_history():
             'zabieg': row['nazwa_zabiegu']
         })
 
-    
     return render_template('treatment_history.html', patient_id=ID_pacjenta, treatment_history=treatment_history)
+
+
+# wyświtlanie wszystkich chorób danego pacjenta
+@app.route('/patient_illnesses', methods=['GET'])  # [NOT SURE]
+def patient_illnesses():
+    db = mysql.connect()
+    cursor = db.cursor(pymysql.cursors.DictCursor)
+    ID_pacjenta = request.args.get('ID_pacjenta')
+
+    query = """
+        SELECT k.pesel, c.nazwa_choroby
+        FROM klienci k
+        JOIN terminarz_zabiegow t ON t.ID_pacjenta = k.idklient
+        JOIN leczenie l ON t.rodzaj_zabiegu = l.ID_zabiegu
+        JOIN choroby c ON l.choroba = c.ID_choroby
+        WHERE t.ID_pacjenta = %s
+        ORDER BY t.termin DESC
+    """
+    values = (ID_pacjenta,)
+    cursor.execute(query, values)
+    result = cursor.fetchall()
+    illnesses = []
+    for row in result:
+        illnesses.append({
+            'pesel': row['pesel'],
+            'choroba': row['nazwa_choroby']
+        })
+
+    return render_template('patient_illnesses.html', patient_id=ID_pacjenta, illnesses=illnesses)
 
 # dodawanie stanowisk
 @app.route('/add_position', methods=['POST', 'GET'])
@@ -228,8 +328,8 @@ def add_position():
     db = mysql.connect()
     cursor = db.cursor(pymysql.cursors.DictCursor)
     msg = ''
-    
-    if request.method == 'POST'and 'nazwa_stanowiska' in request.form:
+
+    if request.method == 'POST' and 'nazwa_stanowiska' in request.form:
         nazwa = request.form['nazwa_stanowiska']
         query = "SELECT * FROM stanowiska WHERE Nazwa_stanowiska=%s"
         cursor.execute(query, (nazwa,))
@@ -262,40 +362,41 @@ def add_position():
 # usuwanie stanowisk
 @app.route('/remove_position', methods=['GET', 'POST'])
 def remove_position():
-	db = mysql.connect()
-	cursor = db.cursor(pymysql.cursors.DictCursor)
-	msg = ''
-	
-	if request.method == 'POST' and 'nazwa_stanowiska' in request.form:
-		nazwa_stanowiska = request.form['nazwa_stanowiska']
+    db = mysql.connect()
+    cursor = db.cursor(pymysql.cursors.DictCursor)
+    msg = ''
 
-		# Check if the position is a foreign key in the zabiegi table
-		query = "SELECT COUNT(*) AS count FROM zabiegi WHERE specjalista = %s"
-		values = (nazwa_stanowiska,)
-		cursor.execute(query, values)
+    if request.method == 'POST' and 'nazwa_stanowiska' in request.form:
+        nazwa_stanowiska = request.form['nazwa_stanowiska']
 
-		foreign_key_count = cursor.fetchone()['count']
+        # Check if the position is a foreign key in the zabiegi table
+        query = "SELECT COUNT(*) AS count FROM zabiegi WHERE specjalista = %s"
+        values = (nazwa_stanowiska,)
+        cursor.execute(query, values)
 
-		if foreign_key_count > 0:
-			msg = 'Nie mozna usunac stanowiska, poniewaz jest one używane w tabeli zabiegi.'
-		else:
-			# Check if the position exists in the database
-			query = "SELECT * FROM stanowiska WHERE nazwa_stanowiska = %s"
-			values = (nazwa_stanowiska,)
-			cursor.execute(query, values)
+        foreign_key_count = cursor.fetchone()['count']
 
-			deleting = cursor.fetchone()
+        if foreign_key_count > 0:
+            msg = 'Nie mozna usunac stanowiska, poniewaz jest one używane w tabeli zabiegi.'
+        else:
+            # Check if the position exists in the database
+            query = "SELECT * FROM stanowiska WHERE nazwa_stanowiska = %s"
+            values = (nazwa_stanowiska,)
+            cursor.execute(query, values)
 
-			if deleting:
-				# Delete the position from the database
-				query = "DELETE FROM stanowiska WHERE nazwa_stanowiska = %s"
-				cursor.execute(query, values)
-				db.commit()
-				msg = 'Usunieto stanowisko'
-			else:
-				msg = 'Nie znaleziono takiego stanowiska'
+            deleting = cursor.fetchone()
 
-	return render_template('removing_position.html', msg=msg)
+            if deleting:
+                # Delete the position from the database
+                query = "DELETE FROM stanowiska WHERE nazwa_stanowiska = %s"
+                cursor.execute(query, values)
+                db.commit()
+                msg = 'Usunieto stanowisko'
+            else:
+                msg = 'Nie znaleziono takiego stanowiska'
+
+    return render_template('removing_position.html', msg=msg)
+
 
 # wyswietlanie wszystkich stanowisk
 @app.route('/show_positions', methods=['GET', 'POST'])
@@ -305,14 +406,15 @@ def show_positions():
     positions = []
 
     query = "SELECT * FROM stanowiska"
-    cursor.execute(query)   
+    cursor.execute(query)
 
     result = cursor.fetchall()
 
     for position in result:
-        positions.append(position)  
+        positions.append(position)
 
     return render_template('showing_positions.html', positions=positions)
+
 
 @app.route('/add_employee', methods=['GET', 'POST'])
 def add_employee():
@@ -362,8 +464,9 @@ def add_employee():
 
     return render_template('adding_employee.html', job_names=job_names, msg=msg, error_msg=error_msg)
 
+
 # wyswietlanie pracowników
-@app.route('/show_employees', methods = ['GET', 'POST'])
+@app.route('/show_employees', methods=['GET', 'POST'])
 def show_employees():
     db = mysql.connect()
     cursor = db.cursor(pymysql.cursors.DictCursor)
@@ -373,7 +476,32 @@ def show_employees():
     cursor.execute(query)
     employees = cursor.fetchall()
 
-    return render_template('view_employees.html', employees=employees) 
+    return render_template('view_employees.html', employees=employees)
+
+# wyswietlanie konkretnego pracownika
+@app.route('/show_employee', methods=['GET', 'POST'])
+def show_employee():
+    db = mysql.connect()
+    cursor = db.cursor(pymysql.cursors.DictCursor)
+    msg = ''
+
+    if request.method == 'POST' and 'id' in request.form:
+
+        id = request.form['id']
+        query = "SELECT * FROM pracownicy WHERE idpracownicy = %s"
+        values = (id,)
+        cursor.execute(query, values)
+        employee = cursor.fetchone()
+
+        if employee:
+            msg = f"Informacje o pracowniku o id {id}:"
+            for key, value in employee.items():
+                msg += f"\n{key.capitalize()}: {value}"
+        else:
+            msg = 'Nie znaleziono pracownika o podanym ID'
+
+    return render_template('view_employee.html', msg=msg)
+
 
 # dodawanie i usuwanie sprzętu medycznego
 @app.route('/add_medical_equipment', methods=['POST', 'GET'])
@@ -389,7 +517,8 @@ def add_medical_equipment():
         marka = request.form['marka'] if 'marka' in request.form else None
         model = request.form['model'] if 'model' in request.form else None
         zastosowanie = request.form['zastosowanie'] if 'zastosowanie' in request.form else None
-        termin_ostatniego_serwisu = request.form['termin_ostatniego_serwisu'] if 'termin_ostatniego_serwisu' in request.form else None
+        termin_ostatniego_serwisu = request.form[
+            'termin_ostatniego_serwisu'] if 'termin_ostatniego_serwisu' in request.form else None
         okres_serwisu = request.form['okres_serwisu'] if 'okres_serwisu' in request.form else None
 
         # Get the highest ID and increment it by 1
@@ -417,35 +546,37 @@ def add_medical_equipment():
 
     return render_template('adding_medical_equipment.html', msg=msg, room_numbers=room_numbers)
 
-# usuwanie 
+
+# usuwanie
 @app.route('/delete_equipment', methods=['GET', 'POST'])
 def delete_equipment():
-	db = mysql.connect()
-	cursor = db.cursor(pymysql.cursors.DictCursor)
-	msg = ''
-	
-	if request.method == 'POST'and 'id' in request.form:
-		id = request.form['id']
+    db = mysql.connect()
+    cursor = db.cursor(pymysql.cursors.DictCursor)
+    msg = ''
 
-		query = "SELECT * FROM sprzet_medyczny WHERE ID_sprzetu = %s"
-		values = (id,)
-		cursor.execute(query, values)
+    if request.method == 'POST' and 'id' in request.form:
+        id = request.form['id']
 
-		deleting = cursor.fetchone()
+        query = "SELECT * FROM sprzet_medyczny WHERE ID_sprzetu = %s"
+        values = (id,)
+        cursor.execute(query, values)
 
-		if deleting:
-			query = "DELETE FROM sprzet_medyczny WHERE ID_sprzetu = %s"
-			cursor.execute(query, values)
-			db.commit()
-			msg = 'Usunieto sprzęt medyczny'
-		else:
-			msg = 'Nie znaleziono takiego sprzętu'
+        deleting = cursor.fetchone()
 
-	return render_template('removing_equipment.html', msg=msg)
+        if deleting:
+            query = "DELETE FROM sprzet_medyczny WHERE ID_sprzetu = %s"
+            cursor.execute(query, values)
+            db.commit()
+            msg = 'Usunieto sprzęt medyczny'
+        else:
+            msg = 'Nie znaleziono takiego sprzętu'
+
+    return render_template('removing_equipment.html', msg=msg)
 
 
 # wyswietlanie sprzętu w kolejności najbardziej potrzebujących serwisu
 import datetime
+
 
 @app.route('/show_equipment', methods=['GET', 'POST'])
 def show_equipment():
@@ -467,7 +598,8 @@ def show_equipment():
     msg = "<table><tr><th>ID sprzętu</th><th>Pokój</th><th>Ostatni serwis</th><th>Następny serwis</th></tr>"
     for sprzet in sprzety:
         msg += "<tr><td>{}</td><td>{}</td><td>{}</td><td>{}</td></tr>".format(
-            sprzet["ID_sprzetu"], sprzet["Pokoj"], sprzet["Termin_ostatniego_seriwsu"], sprzet["Termin_nastepnego_seriwsu"]
+            sprzet["ID_sprzetu"], sprzet["Pokoj"], sprzet["Termin_ostatniego_seriwsu"],
+            sprzet["Termin_nastepnego_seriwsu"]
         )
     msg += "</table>"
 
@@ -483,11 +615,11 @@ def add_treatment_room():
     db = mysql.connect()
     cursor = db.cursor(pymysql.cursors.DictCursor)
     msg = ''
-	
+
     if request.method == 'POST' and 'numer' in request.form:
         numer = request.form['numer']
         rodzaj = request.form['rodzaj'] if 'rodzaj' in request.form else None
-	
+
         # Check if the treatment room already exists in the database
         query = "SELECT numer_sali FROM sale WHERE numer_sali = %s"
         cursor.execute(query, numer)
@@ -502,54 +634,77 @@ def add_treatment_room():
             cursor.execute(query, values)
             db.commit()
             msg = 'Dodano salę.'
-	
+
     return render_template('adding_treatment_room.html', msg=msg)
+
 
 # usuwanie sal zabiegowych
 @app.route('/delete_treatment_room', methods=['GET', 'POST'])
 def delete_treatment_room():
-	db = mysql.connect()
-	cursor = db.cursor(pymysql.cursors.DictCursor)
-	msg = ''
-	
-	if request.method == 'POST'and 'numer' in request.form:
-		numer = request.form['numer']
+    db = mysql.connect()
+    cursor = db.cursor(pymysql.cursors.DictCursor)
+    msg = ''
 
-		query = "SELECT * FROM sale WHERE numer_sali = %s"
-		values = (numer,)
-		cursor.execute(query, values)
+    if request.method == 'POST' and 'numer' in request.form:
+        numer = request.form['numer']
 
-		deleting = cursor.fetchone()
+        query = "SELECT * FROM sale WHERE numer_sali = %s"
+        values = (numer,)
+        cursor.execute(query, values)
 
-		if deleting:
-			query = "DELETE FROM sale WHERE numer_sali = %s"
-			cursor.execute(query, values)
-			db.commit()
-			msg = 'Usunieto sale'
-		else:
-			msg = 'Nie znaleziono takiej sali'
+        deleting = cursor.fetchone()
 
-	return render_template('deleting_treatment_room.html', msg=msg)
+        if deleting:
+            query = "DELETE FROM sale WHERE numer_sali = %s"
+            cursor.execute(query, values)
+            db.commit()
+            msg = 'Usunieto sale'
+        else:
+            msg = 'Nie znaleziono takiej sali'
 
-#wyswietlanie
+    return render_template('deleting_treatment_room.html', msg=msg)
+
+
+# wyswietlanie
 @app.route('/show_treatment_rooms', methods=['GET', 'POST'])
 def show_treatment_rooms():
     db = mysql.connect()
     cursor = db.cursor(pymysql.cursors.DictCursor)
     positions = []
-	
+
     query = "SELECT * FROM sale"
     cursor.execute(query)
-	
+
     sale = cursor.fetchall()
-	
+
     result = ""
     for sala in sale:
         result += str(sala) + "\n"
-	
+
     msg = result
-	
+
     return render_template('showing_treatment_rooms.html', msg=msg)
+
+# wyswietlanie 2
+@app.route('/show_rooms_equipment', methods=['GET', 'POST'])
+def show_rooms_equipment():
+    db = mysql.connect()
+    cursor = db.cursor(pymysql.cursors.DictCursor)
+    msg=''
+
+    query = "SELECT pokoj, rodzaj_urzadzenia FROM sprzet_medyczny"
+    cursor.execute(query)
+
+    sale = cursor.fetchall()
+
+    result = ""
+    for sala in sale:
+        result += str(sala) + "\n"
+
+    msg = result
+
+    return render_template('showing_treatment_rooms.html', msg=msg)
+
 
 # dodawanie chorob
 @app.route('/add_illness', methods=['POST', 'GET'])
@@ -584,22 +739,23 @@ def add_illness():
     db.close()
     return render_template('adding_illness.html', msg=msg)
 
+
 # usuwanie chorob
 @app.route('/delete_illness', methods=['GET', 'POST'])
 def delete_illness():
     db = mysql.connect()
     cursor = db.cursor(pymysql.cursors.DictCursor)
     msg = ''
-    
-    if request.method == 'POST'and 'id' in request.form:
+
+    if request.method == 'POST' and 'id' in request.form:
         id = request.form['id']
-        
+
         # Check if the illness is used in any treatments
         query = "SELECT * FROM leczenie WHERE Choroba = %s"
         values = (id,)
         cursor.execute(query, values)
         treatment = cursor.fetchone()
-        
+
         if treatment:
             msg = 'Nie można usunąć choroby, ponieważ jest używana w leczeniu.'
         else:
@@ -616,8 +772,9 @@ def delete_illness():
                 msg = 'Usunięto chorobę'
             else:
                 msg = 'Nie znaleziono takiej choroby'
-    
+
     return render_template('deleting_illness.html', msg=msg)
+
 
 # wyswietlanie chorob
 @app.route('/show_illnesses', methods=['GET'])
@@ -625,19 +782,62 @@ def show_illnesses():
     db = mysql.connect()
     cursor = db.cursor(pymysql.cursors.DictCursor)
     positions = []
-	
+
     query = "SELECT * FROM choroby"
     cursor.execute(query)
-	
+
     choroby = cursor.fetchall()
-	
+
     result = ""
     for choroba in choroby:
         result += str(choroba) + "\n"
-	
+
     msg = result
-	
+
     return render_template('showing_illnesses.html', msg=msg)
+
+# wyswietlanie opisow chorob
+@app.route('/show_illness_desc', methods=['GET'])
+def show_illness_desc():
+    db = mysql.connect()
+    cursor = db.cursor(pymysql.cursors.DictCursor)
+    ID_choroby = request.args.get('ID_choroby')
+
+    # Retrieve the patient's treatment history
+    query = "SELECT Nazwa_choroby, Opis FROM choroby WHERE ID_choroby = %s"
+    values = (ID_choroby,)
+    cursor.execute(query, values)
+    result = cursor.fetchall()
+    illnesses = []
+    for row in result:
+        illnesses.append({
+            'nazwa': row['Nazwa_choroby'],
+            'opis': row['Opis']
+        })
+
+    return render_template('show_illness_desc.html', illness_id=ID_choroby, illnesses=illnesses)
+
+# wyswietlanie opisow zabiegow
+@app.route('/show_treatment_desc', methods=['GET'])
+def show_treatment_desc():
+    db = mysql.connect()
+    cursor = db.cursor(pymysql.cursors.DictCursor)
+    ID_zabiegu = request.args.get('ID_zabiegu')
+
+    # Retrieve the patient's treatment history
+    query = "SELECT nazwa_zabiegu, Opis FROM leczenie WHERE ID_zabiegu = %s"
+    values = (ID_zabiegu,)
+    cursor.execute(query, values)
+    result = cursor.fetchall()
+    treatments = []
+    for row in result:
+        treatments.append({
+            'nazwa': row['nazwa_zabiegu'],
+            'opis': row['Opis']
+        })
+
+    return render_template('show_treatment_desc.html', treatment_id=ID_zabiegu, treatments=treatments)
+
 
 # dodawanie leczenia
 @app.route('/add_healing', methods=['GET', 'POST'])
@@ -645,18 +845,18 @@ def add_healing():
     db = mysql.connect()
     cursor = db.cursor(pymysql.cursors.DictCursor)
     msg = ''
-    
+
     if request.method == 'POST' and 'nazwa' in request.form:
         # Get the maximum existing id_zabiegu value
-        msg='test'
+        msg = 'test'
         cursor.execute('SELECT MAX(id_zabiegu) as max_id FROM leczenie')
         result = cursor.fetchone()
         max_id = result['max_id'] if result['max_id'] else 0
-        
+
         # Automatically assign the next id_zabiegu value
         id = str(max_id + 1)
         nazwa = request.form['nazwa']
-        
+
         # Check if choroba is a number
         choroba = request.form['choroba'] if 'choroba' in request.form and request.form['choroba'].isdigit() else None
         if choroba is None:
@@ -668,8 +868,9 @@ def add_healing():
             db.commit()
 
             msg = 'Dodano leczenie'
-    
+
     return render_template('adding_healing.html', msg=msg)
+
 
 # usuwanie leczenia
 @app.route('/delete_healing', methods=['GET', 'POST'])
@@ -677,10 +878,10 @@ def delete_healing():
     db = mysql.connect()
     cursor = db.cursor(pymysql.cursors.DictCursor)
     msg = ''
-    
+
     if request.method == 'POST' and 'id' in request.form:
         id = request.form['id']
-        
+
         # Check if the id_zabiegu value is present in the zabiegi table
         query = "SELECT * FROM zabiegi WHERE id_zabieg = %s"
         values = (id,)
@@ -713,19 +914,20 @@ def show_healing():
     db = mysql.connect()
     cursor = db.cursor(pymysql.cursors.DictCursor)
     positions = []
-	
+
     query = "SELECT * FROM leczenie"
     cursor.execute(query)
-	
+
     leczenia = cursor.fetchall()
-	
+
     result = ""
     for leczenie in leczenia:
         result += str(leczenie) + "\n"
-	
+
     msg = result
-	
+
     return render_template('showing_healings.html', msg=msg)
+
 
 @app.route('/add_client', methods=['POST', 'GET'])
 def add_client():
@@ -741,22 +943,22 @@ def add_client():
     id_rezerwacji_parkingu = request.form.get('id_rezerwacji_parkingu')
     numer_pokoju = request.form.get('numer_pokoju')
     adres = request.form.get('adres')
-    haslo = request.form.get('haslo')
 
-    if not id_rezerwacji_parkingu:
-        id_rezerwacji_parkingu = None
-    else:
-        id_rezerwacji_parkingu = int(id_rezerwacji_parkingu)
+    # Sprawdzanie, czy klient o podanym Peselu już istnieje w bazie
+    query = "SELECT COUNT(*) FROM klienci WHERE Pesel = %s"
+    cursor.execute(query, (pesel,))
+    result = cursor.fetchone()
+    if result['COUNT(*)'] > 0:
+        msg = 'Błąd: Klient o podanym Peselu już istnieje w bazie'
+        return render_template('adding_client.html', msg=msg)
 
-    # Pobieranie maksymalnej wartości IDklient i dodanie 1
-
-    query = "SELECT MAX(IDklient) FROM klienci"
-    cursor.execute(query)
-    max_id = cursor.fetchone()
-    if not max_id or not max_id.get('MAX(IDklient)'):
-        IDklient = 1
-    else:
-        IDklient = max_id['MAX(IDklient)'] + 1
+    # Sprawdzanie, czy pokój o podanym numerze i turnusie już jest zajęty
+    query = "SELECT COUNT(*) FROM klienci WHERE Numer_pokoju = %s AND ID_turnusu = %s"
+    cursor.execute(query, (numer_pokoju, id_turnusu))
+    result = cursor.fetchone()
+    if result['COUNT(*)'] > 0:
+        msg = 'Błąd: Pokój o podanym numerze i turnusie jest już zajęty'
+        return render_template('adding_client.html', msg=msg)
 
     # Pobieranie dostępnych wartości ID_turnusu i Numer_pokoju
     query = "SELECT ID_turnusu FROM terminarz_noclegów"
@@ -767,35 +969,23 @@ def add_client():
     cursor.execute(query)
     available_numer_pokoju = [row['Numer_pokoju'] for row in cursor.fetchall()]
 
-    # Sprawdzanie, czy klient o podanym Peselu już istnieje w bazie
-    query = "SELECT COUNT(*) FROM klienci WHERE Pesel = %s"
-    cursor.execute(query, (pesel,))
-    result = cursor.fetchone()
-    if result['COUNT(*)'] > 0:
-        msg = 'Błąd: Klient o podanym Peselu już istnieje w bazie'
-        return render_template('adding_client.html', msg=msg, available_id_turnusu = available_id_turnusu, available_numer_pokoju = available_numer_pokoju )
-
-    # Sprawdzanie, czy pokój o podanym numerze i turnusie już jest zajęty
-    query = "SELECT COUNT(*) FROM klienci WHERE Numer_pokoju = %s AND ID_turnusu = %s"
-    cursor.execute(query, (numer_pokoju, id_turnusu))
-    result = cursor.fetchone()
-    if result['COUNT(*)'] > 0:
-        msg = 'Błąd: Pokój o podanym numerze i turnusie jest już zajęty'
-        return render_template('adding_client.html', msg=msg, available_id_turnusu = available_id_turnusu, available_numer_pokoju = available_numer_pokoju )
+    if id_turnusu not in available_id_turnusu:
+        id_turnusu = None
+    if numer_pokoju not in available_numer_pokoju:
+        numer_pokoju = None
 
     if pesel is None:
         msg = 'Błąd: brak wartości PESEL w formularzu'
-        return render_template('adding_client.html', msg=msg, available_id_turnusu = available_id_turnusu, available_numer_pokoju = available_numer_pokoju )
+        return render_template('adding_client.html', msg=msg)
 
-    query = "INSERT INTO klienci (IDklient, Pesel, Imie, Nazwisko, Haslo, Data_urodzenia, Adres, id_rezerwacji_parkingu, ID_turnusu, Numer_pokoju) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
-    values = (IDklient, pesel, imie, nazwisko, haslo, data_urodzenia, adres, id_rezerwacji_parkingu, id_turnusu, numer_pokoju)
+    query = "INSERT INTO klienci (IDklient, Pesel, Imie, Nazwisko, Data_urodzenia, Adres, id_rezerwacji_parkingu, ID_turnusu, Numer_pokoju) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)"
+    values = (IDklient, pesel, imie, nazwisko, data_urodzenia, adres, id_rezerwacji_parkingu, id_turnusu, numer_pokoju)
     cursor.execute(query, values)
     db.commit()
 
     msg = 'Dodano klienta'
 
-    return render_template('adding_client.html', msg=msg, available_id_turnusu = available_id_turnusu, available_numer_pokoju = available_numer_pokoju )
-
+    return render_template('adding_client.html', msg=msg)
 
 
 if __name__ == '__main__':
