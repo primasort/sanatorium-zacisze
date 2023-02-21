@@ -17,5 +17,15 @@
     </nav>
 
     <h4>Cześć {{ username }}! Oto dostępne dla ciebie czynności.</h4>
+    <ul>
+        <li> <a href="{{ url_for('add_my_res') }}"> dodawanie rezerwacji parkingu</a></li>
+        <li> <a href="{{ url_for('del_my_res') }}"> usuwanie rezerwacji parkingu</a></li>
+        <li> <a href="{{ url_for('show_my_res') }}"> wyswietlanie rezerwacji parkingu</a></li>
+        <li> <a href="{{ url_for('show_free_park') }}"> wyswietlanie wolnych miejsc parkingowych</a></li>
+        <li> <a href="{{ url_for('show_my_schedule') }}"> wyswietlanie zabiegow danego klienta</a></li>
+        <li> <a href="{{ url_for('show_my_booking') }}"> wyswietlanie zabiegow danego klienta</a></li>
+
+
+    </ul>
 </body>
 </html>
