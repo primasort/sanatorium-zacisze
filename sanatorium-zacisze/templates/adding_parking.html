@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Add Parking</title>
+  </head>
+  <body>
+    <body style="background-color: bisque;"></body>
+    <h1>Add Parking</h1>
+    <form method="POST" action="/add_parking">
+      <label for="rodzaj_strefy">Rodzaj strefy:</label>
+      <input type="text" id="rodzaj_strefy" name="rodzaj_strefy" required><br>
+      <input type="submit" value="Dodaj nowe">
+    </form>
+    {% if msg %}
+    <p>{{ msg }}</p>
+    {% endif %}
+    <a href ="{{url_for('admin_panel')}}">Wróć do panelu</a>
+  </body>
+</html>

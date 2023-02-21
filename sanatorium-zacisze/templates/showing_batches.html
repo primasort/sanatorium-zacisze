@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>All Batches</title>
+</head>
+<body>
+    <body style="background-color: bisque;">
+	<h1>Wszystkie turnusy:</h1>
+	{% if msg %}
+		<pre>{{ msg }}</pre>
+	{% else %}
+		<p>No batches found.</p>
+	{% endif %}
+    <a href ="{{url_for('admin_panel')}}">Wróć do panelu</a>
+</body>
+</html>

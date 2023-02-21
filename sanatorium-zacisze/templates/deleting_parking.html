@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Delete Parking</title>
+  </head>
+  <body>
+    <body style="background-color: bisque;"></body>
+    <h1>Delete Parking</h1>
+    {% if msg %}
+    <p>{{ msg }}</p>
+    {% endif %}
+    <form method="POST">
+      <label for="id">Numer miejsca:</label>
+      <input type="text" name="id">
+      <button type="submit">Delete</button>
+    </form>
+    <a href ="{{url_for('admin_panel')}}">Wróć do panelu</a>
+  </body>
+</html>
