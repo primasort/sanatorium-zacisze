@@ -987,6 +987,752 @@ def add_client():
 
     return render_template('adding_client.html', msg=msg)
 
+@app.route('/remove_client', methods=['GET', 'POST'])
+def remove_client():
+    db = mysql.connect()
+    cursor = db.cursor(pymysql.cursors.DictCursor)
+    msg = ''
+    if request.method == 'POST'and 'pesel' in request.form:
+        pesel = request.form['pesel']
+
+        query = "SELECT * FROM klienci WHERE pesel = %s"
+        values = (pesel,)
+        cursor.execute(query, values)
+
+        deleting = cursor.fetchone()
+
+        if deleting:
+            # Check if the client has any appointments
+            query = "SELECT * FROM terminarz_zabiegow WHERE ID_pacjenta = %s"
+            cursor.execute(query, (deleting['IDklient'],))
+            appointments = cursor.fetchone()
+
+            if appointments:
+                msg = 'Nie można usunąć klienta, ponieważ ma przypisane zabiegi w terminarzu'
+            else:
+                query = "DELETE FROM klienci WHERE pesel = %s"
+                cursor.execute(query, values)
+                db.commit()
+                msg = 'Usunięto klienta'
+        else:
+            msg = 'Nie znaleziono takiego klienta'
+
+    return render_template('removing_customer.html', msg=msg)
+
+
+#wyswietlanie
+@app.route('/get_clients', methods=['GET', 'POST'])
+def get_clients():
+    db = mysql.connect()
+    cursor = db.cursor(pymysql.cursors.DictCursor)
+    msg = ''
+
+    query = "SELECT * FROM klienci ORDER BY ID_turnusu DESC, IDklient"
+    cursor.execute(query)
+    goscie = cursor.fetchall()
+	
+    result = ""
+    for gosc in goscie:
+        result += str(gosc) + "\n"
+	
+    msg = result
+	
+    return render_template('get_clients.html', msg=msg)
+
+# dodawanie
+@app.route('/add_batch', methods=['POST', 'GET'])
+def add_batch():
+    db = mysql.connect()
+    cursor = db.cursor(pymysql.cursors.DictCursor)
+    msg = ''
+
+    if request.method == 'POST' and 'id' in request.form and 'datap' in request.form and 'dataw' in request.form:
+        id = request.form['id']
+        datap = request.form['datap']
+        dataw = request.form['dataw']
+
+        # Check if the ID already exists in the table
+        cursor.execute("SELECT COUNT(*) FROM terminarz_noclegów WHERE id_turnusu = %s", (id,))
+        result = cursor.fetchone()
+        if result['COUNT(*)'] > 0:
+            msg = 'Turnus o podanym ID już istnieje'
+        else:
+            # Check if the dates overlap with existing records
+            cursor.execute("SELECT COUNT(*) FROM terminarz_noclegów WHERE id_turnusu != %s AND data_przyjazdu < %s AND data_wyjazdu > %s", (id, dataw, datap))
+            result = cursor.fetchone()
+            if result['COUNT(*)'] > 0:
+                msg = 'Podane daty nakładają się na istniejące turnusy'
+            else:
+                # Insert the new record into the table and commit the changes
+                query = "INSERT INTO terminarz_noclegów (id_turnusu, data_przyjazdu, data_wyjazdu) VALUES (%s, %s, %s)"
+                values = (id, datap, dataw)
+                cursor.execute(query, values)
+                db.commit()
+                msg = 'Dodano turnus'
+
+    return render_template('adding_batch.html', msg=msg)
+
+#usuwanie turnusu
+@app.route('/delete_batch', methods=['GET', 'POST'])
+def delete_batch():
+    db = mysql.connect()
+    cursor = db.cursor(pymysql.cursors.DictCursor)
+    msg = ''
+    
+    if request.method == 'POST'and 'id' in request.form:
+        id = request.form['id']
+
+        # Check if the ID exists in the 'klienci' table
+        query = "SELECT * FROM klienci WHERE ID_turnusu = %s"
+        cursor.execute(query, (id,))
+        klienci_result = cursor.fetchone()
+
+        if klienci_result:
+            msg = 'Nie można usunąć turnusu, ponieważ istnieją klienci przypisani do tego turnusu.'
+        else:
+            # Check if the ID exists in the 'terminarz_noclegów' table
+            query = "SELECT * FROM terminarz_noclegów WHERE id_turnusu = %s"
+            cursor.execute(query, (id,))
+            deleting = cursor.fetchone()
+
+            if deleting:
+                query = "DELETE FROM terminarz_noclegów WHERE id_turnusu = %s"
+                cursor.execute(query, (id,))
+                db.commit()
+                msg = 'Usunięto turnus.'
+            else:
+                msg = 'Nie znaleziono takiego turnusu.'
+
+    return render_template('deleting_batch.html', msg=msg)
+
+# wyswietlanie wszystkich
+@app.route('/show_batch', methods=['GET'])
+def show_batch():
+    db = mysql.connect()
+    cursor = db.cursor(pymysql.cursors.DictCursor)
+    positions = []
+	
+    query = "SELECT * FROM terminarz_noclegów"
+    cursor.execute(query)
+	
+    turnusy = cursor.fetchall()
+	
+    result = ""
+    for turnus in turnusy:
+        result += str(turnus) + "\n"
+	
+    msg = result
+	
+    return render_template('showing_batches.html', msg=msg)
+
+	
+# wyswietlanie konkretnego
+@app.route('/show_particular_batch', methods=['GET', 'POST'])
+def show_particular_batch():
+    db = mysql.connect()
+    cursor = db.cursor(pymysql.cursors.DictCursor)
+    positions = []
+    msg =''
+	
+    if request.method == 'POST'and 'id' in request.form:
+        id = request.form['id']
+
+        query = "SELECT * FROM terminarz_noclegów WHERE id_turnusu = %s"
+        values = (id,)
+        cursor.execute(query, values)
+
+        fetching = cursor.fetchone()
+
+        if fetching:
+            query = "SELECT t.ID_turnusu, k.idklient, k.imie, k.nazwisko FROM terminarz_noclegów t JOIN klienci k on t.id_turnusu = k.id_turnusu"
+            cursor.execute(query)
+			
+            turnusy = cursor.fetchall()
+	
+            result = ""
+            for turnus in turnusy:
+                result += str(turnus) + "\n"
+	
+            msg = result
+        else:
+            msg = 'Nie znaleziono takiego turnusu'
+
+    return render_template('show_particular_batch.html', msg=msg)
+
+@app.route('/add_room', methods=['POST', 'GET'])
+def add_room():
+    db = mysql.connect()
+    cursor = db.cursor(pymysql.cursors.DictCursor)
+    msg = ''
+    
+    # Load the available room standards from the database
+    query = "SELECT DISTINCT Standart FROM wyposarzenie_pokoju"
+    cursor.execute(query)
+    standards = [row['Standart'] for row in cursor.fetchall()]
+
+    if request.method == 'POST' and 'numer' in request.form:
+        numer = request.form['numer']
+        standart = request.form['standart'] if 'standart' in request.form else None
+
+        # Check if the room already exists in the database
+        query = "SELECT numer_pokoju FROM pokoje WHERE numer_pokoju = %s"
+        cursor.execute(query, (numer,))
+        existing_room = cursor.fetchone()
+
+        if existing_room:
+            msg = f"Pokój o numerze {numer} już istnieje w bazie danych."
+        else:
+            # Insert the new room into the database
+            query = "INSERT INTO pokoje (numer_pokoju, standart) VALUES (%s, %s)"
+            values = (numer, standart)
+            cursor.execute(query, values)
+            db.commit()
+            msg = 'Dodano pokój.'
+    
+    return render_template('adding_room.html', msg=msg, standards=standards)
+
+
+@app.route('/delete_room', methods=['GET', 'POST'])
+def delete_room():
+    db = mysql.connect()
+    cursor = db.cursor(pymysql.cursors.DictCursor)
+    msg = ''
+    
+    if request.method == 'POST' and 'numer' in request.form:
+        numer = request.form['numer']
+
+        # Check if the room is used in any events
+        query = "SELECT * FROM wydarzenia_fakultatywne WHERE miejsce = %s"
+        values = (numer,)
+        cursor.execute(query, values)
+        event = cursor.fetchone()
+
+        # Check if the room is used by any clients
+        query = "SELECT * FROM klienci WHERE Numer_pokoju = %s"
+        values = (numer,)
+        cursor.execute(query, values)
+        client = cursor.fetchone()
+
+        if event or client:
+            msg = 'Nie można usunąć pokoju, ponieważ jest on używany w wydarzeniach lub przez klientów'
+        else:
+            query = "SELECT * FROM pokoje WHERE numer_pokoju = %s"
+            values = (numer,)
+            cursor.execute(query, values)
+
+            room = cursor.fetchone()
+
+            if room:
+                query = "DELETE FROM pokoje WHERE numer_pokoju = %s"
+                cursor.execute(query, values)
+                db.commit()
+                msg = 'Usunięto pokój'
+            else:
+                msg = 'Nie znaleziono takiego pokoju'
+
+    return render_template('deleting_room.html', msg=msg)
+
+# wyswietlanie
+@app.route('/show_rooms', methods=['GET'])
+def show_rooms():
+    db = mysql.connect()
+    cursor = db.cursor(pymysql.cursors.DictCursor)
+    positions = []
+	
+    query = "SELECT * FROM pokoje"
+    cursor.execute(query)
+	
+    rooms = cursor.fetchall()
+	
+    result = ""
+    for room in rooms:
+        result += str(room) + "\n"
+	
+    msg = result
+	
+    return render_template('showing_rooms.html', msg=msg)
+
+@app.route('/add_room_eq', methods=['POST', 'GET'])
+def add_room_eq():
+    db = mysql.connect()
+    cursor = db.cursor(pymysql.cursors.DictCursor)
+    msg = ''
+    
+    if request.method == 'POST' and 'standart' in request.form:
+        standart = request.form['standart']
+        wyposarzenie = request.form['wyposarzenie'] if 'wyposarzenie' in request.form else None
+        kaucja = request.form['kaucja'] if 'kaucja' in request.form else None
+        
+        # Check if the 'numer_pokoju' value already exists in the table
+        query = "SELECT COUNT(*) as count FROM wyposarzenie_pokoju WHERE standart = %s"
+        cursor.execute(query, (standart,))
+        result = cursor.fetchone()
+        
+        if result['count'] > 0:
+            # If the value already exists, display an error message
+            msg = 'Dany standart istnieje już istnieje w tabeli'
+        else:
+            # If the value does not exist, insert the new room equipment information
+            query = "INSERT INTO wyposarzenie_pokoju (Standart, Wyposazenie, Kaucja) VALUES ( %s, %s, %s)"
+            values = (standart, wyposarzenie, kaucja)
+            cursor.execute(query, values)
+            db.commit()
+
+            msg = 'Dodano wyposarzenie pokoju'
+    
+    return render_template('adding_room_eq.html', msg=msg)
+
+@app.route('/delete_room_eq', methods=['GET', 'POST'])
+def delete_room_eq():
+    msg = ''
+    if request.method == 'POST' and 'standart' in request.form:
+        standart = request.form['standart']
+        db = None
+    
+        db = mysql.connect()
+        cursor = db.cursor(pymysql.cursors.DictCursor)
+
+        # Check if the value being deleted is used in the "pokoje" table
+        query = "SELECT * FROM pokoje WHERE standart = %s"
+        cursor.execute(query, (standart,))
+        room = cursor.fetchone()
+        if room:
+            msg = 'Nie można usunąć wyposażenia pokoju, ponieważ wartość Standart jest używana w tabeli pokoje.'
+        else:
+        # Perform the deletion
+            query = "SELECT * FROM wyposarzenie_pokoju WHERE standart = %s"
+            cursor.execute(query, (standart,))
+            deleting = cursor.fetchone()
+
+            if deleting:
+                query = "DELETE FROM wyposarzenie_pokoju WHERE standart = %s"
+                cursor.execute(query, (standart,))
+                db.commit()
+                msg = 'Usunięto wyposażenie pokoju.'
+            else:
+                msg = 'Nie znaleziono takiego wyposażenia.'
+
+
+    return render_template('deleting_room_eq.html', msg=msg)
+
+# wyswietlanie
+@app.route('/show_room_eqs', methods=['GET'])
+def show_room_eqs():
+    db = mysql.connect()
+    cursor = db.cursor(pymysql.cursors.DictCursor)
+    positions = []
+	
+    query = "SELECT * FROM wyposarzenie_pokoju"
+    cursor.execute(query)
+	
+    equipments = cursor.fetchall()
+	
+    result = ""
+    for equipment in equipments:
+        result += str(equipment) + "\n"
+	
+    msg = result
+	
+    return render_template('showing_room_eqs.html', msg=msg)
+
+#dodawanie nowego wydarzenia
+@app.route('/add_event', methods=['POST', 'GET'])
+def add_event():
+    db = mysql.connect()
+    cursor = db.cursor(pymysql.cursors.DictCursor)
+    msg = ''
+
+    if request.method == 'POST' and 'terminr' in request.form and 'terminz' in request.form and 'miejsce' in request.form and 'nazwa' in request.form:
+        terminr = request.form['terminr']
+        terminz = request.form['terminz']
+        miejsce = request.form['miejsce']
+        nazwa = request.form['nazwa']
+        rodzaj = request.form.get('rodzaj', None)
+        nazwa_wydarzenia = request.form['nazwa_wydarzenia']
+
+        # check if the new event name already exists in the 'wydarzenia_fakulatatywne' table
+        cursor.execute("SELECT * FROM wydarzenia_fakultatywne WHERE nazwa_wydarzenia=%s", (nazwa,))
+        result = cursor.fetchone()
+        if result:
+            msg = 'Wydarzenie o podanej nazwie już istnieje'
+        else:
+            # get the maximum value of id_wydarzenia from the 'wydarzenia_fakulatatywne' table
+            cursor.execute("SELECT MAX(id_wydarzenia) FROM wydarzenia_fakultatywne")
+            result = cursor.fetchone()
+            id = result['MAX(id_wydarzenia)'] + 1 if result['MAX(id_wydarzenia)'] else 1
+
+            query = "INSERT INTO wydarzenia_fakultatywne (id_wydarzenia, termin_rozpoczecia, termin_zakonczenia, rodzaj_wydarzenia, miejsce, nazwa_wydarzenia) VALUES (%s, %s, %s, %s, %s, %s)"
+            values = (id, terminr, terminz, rodzaj, miejsce, nazwa)
+            cursor.execute(query, values)
+            db.commit()
+
+            msg = 'Dodano wydarzenie'
+
+    # get the list of room numbers from the 'pokoje' table
+    cursor.execute("SELECT Numer_pokoju FROM pokoje")
+    room_numbers = [row['Numer_pokoju'] for row in cursor.fetchall()]
+
+    return render_template('adding_event.html', msg=msg, room_numbers=room_numbers)
+
+# usuwanie
+@app.route('/delete_event', methods=['GET', 'POST'])
+def delete_event():
+    db = mysql.connect()
+    cursor = db.cursor(pymysql.cursors.DictCursor)
+    msg = ''
+	
+    if request.method == 'POST':
+        id = request.form['id']
+
+        query = "SELECT * FROM wydarzenia_fakultatywne WHERE id_wydarzenia = %s"
+        values = (id,)
+        cursor.execute(query, values)
+
+        deleting = cursor.fetchone()
+
+        if deleting:
+            query = "DELETE FROM wydarzenia_fakultatywne WHERE id_wydarzenia = %s"
+            cursor.execute(query, values)
+            db.commit()
+            msg = 'Usunieto wydarzenie'
+        else:
+            msg = 'Nie znaleziono takiego wydarzenia'
+
+    return render_template('deleting_event.html', msg=msg)
+
+# wyswietlanie
+@app.route('/show_events', methods=['GET', 'POST'])
+def show_events():
+    db = mysql.connect()
+    cursor = db.cursor(pymysql.cursors.DictCursor)
+    positions = []
+	
+    query = "SELECT * FROM wydarzenia_fakultatywne"
+    cursor.execute(query)
+	
+    events = cursor.fetchall()
+	
+    result = ""
+    for ev in events:
+        result += str(ev) + "\n"
+	
+    msg = result
+	
+    return render_template('showing_events.html', msg=msg)
+
+# usuwanie
+@app.route('/del_client', methods=['POST', 'GET'])
+def del_client():
+    db = mysql.connect()
+    cursor = db.cursor(pymysql.cursors.DictCursor)
+    msg = ''
+
+    if request.method == 'POST' and 'id' in request.form:
+        id = request.form['id']
+
+        # Check if the guest has any parking reservations
+        query = "DELETE FROM klienci WHERE idklient = %s"
+        values = (id,)
+        cursor.execute(query, values)
+        db.commit()
+
+    return render_template('deleting_client.html', msg=msg)
+
+
+# dodawanie
+@app.route('/add_my_res', methods=['GET', 'POST'])
+def add_my_res():
+    db = mysql.connect()
+    cursor = db.cursor(pymysql.cursors.DictCursor)
+    msg = ''
+
+    if request.method == 'POST' and 'id_klienta' in request.form and 'haslo' in request.form:
+        id_klienta = request.form['id_klienta']
+        haslo = request.form['haslo']
+        query = "SELECT * FROM klienci WHERE idklient = %s AND haslo = %s"
+        values = (id_klienta, haslo)
+        cursor.execute(query, values)
+        klient = cursor.fetchone()
+
+        if klient:
+            if klient['id_rezerwacji_parkingu']:
+                msg = 'Klient posiada juz rezerwacje miejsca'
+            else:
+                query = "SELECT numer_miejsca FROM parking WHERE czy_zarezerwowane=0 LIMIT 1"
+                cursor.execute(query)
+                numer = cursor.fetchone()['numer_miejsca']
+
+                query = "SELECT COALESCE(id_rezerwacji,0)+1 AS next_id FROM rezerwacja_parkingu ORDER BY ID_rezerwacji DESC LIMIT 1"
+                cursor.execute(query)
+                id_rez = cursor.fetchone()['next_id']
+
+
+                if numer:
+                    terminr = request.form['termin_rozpoczecia']
+                    terminz = request.form['termin_zakonczenia']
+
+                    query = "INSERT INTO rezerwacja_parkingu (id_rezerwacji, termin_rozpoczecia, termin_zakonczenia, numer_miejsca) VALUES (%s, %s, %s, %s)"
+                    values = (id_rez, terminr, terminz, numer)
+                    cursor.execute(query, values)
+                    db.commit()
+
+                    msg = 'Dodano rezerwacje miejsca'
+                else:
+                    msg = 'Brak miejsc parkingowych'
+        else:
+            msg = 'Niepoprawne id lub haslo'
+
+
+    return render_template('adding_my_res.html', msg=msg)
+
+# usuwanie
+@app.route('/del_my_res', methods=['GET', 'POST'])
+def del_my_res():
+    db = mysql.connect()
+    cursor = db.cursor(pymysql.cursors.DictCursor)
+    msg = ''
+
+    if request.method == 'POST' and 'id_klienta' in request.form and 'haslo' in request.form:
+        id_klienta = request.form['id_klienta']
+        haslo = request.form['haslo']
+
+        query = "SELECT * FROM klienci WHERE idklient = %s AND haslo = %s"
+        values = (id_klienta, haslo)
+        cursor.execute(query, values)
+        klient = cursor.fetchone()
+
+        if klient:
+            query = "UPDATE klienci SET id_rezerwacji_parkingu = NULL WHERE idklient = %s"
+            values = (id_klienta,)
+            cursor.execute(query, values)
+
+            query = "DELETE FROM rezerwacja_parkingu WHERE id_rezerwacji = %s"
+            values = (klient['id_rezerwacji_parkingu'],)
+            cursor.execute(query, values)
+            db.commit()
+            msg = 'Usunieto rezerwacje'
+        else:
+            msg = 'Niepoprawne id lub haslo'
+
+
+    return render_template('deleting_my_res.html', msg=msg)
+
+# wyswietlanie
+@app.route('/show_my_res', methods=['GET'])
+def show_my_res():
+    db = mysql.connect()
+    cursor = db.cursor(pymysql.cursors.DictCursor)
+    ID_klienta = request.args.get('idklient')
+
+    # Retrieve the patient's treatment history
+    query = """
+        SELECT r.numer_miejsca, r.termin_rozpoczecia, r.termin_zakonczenia
+        FROM rezerwacja_parkingu r
+        JOIN klienci k ON k.id_rezerwacji_parkingu = r.id_rezerwacji
+        WHERE k.idklient = %s
+        ORDER BY r.termin_rozpoczecia DESC
+    """
+    values = (ID_klienta,)
+    cursor.execute(query, values)
+    result = cursor.fetchall()
+    reservations = []
+    for row in result:
+        reservations.append({
+            'numer': row['numer_miejsca'],
+            'terminr': row['termin_rozpoczecia'],
+            'terminz': row['termin_zakonczenia']
+        })
+
+    return render_template('showing_my_res.html', guest_id=ID_klienta, reservations=reservations)
+
+# wyswietlanie wolnych miejsc
+@app.route('/show_free_park', methods=['GET'])
+def show_free_park():
+    db = mysql.connect()
+    cursor = db.cursor(pymysql.cursors.DictCursor)
+    positions = []
+
+    query = "SELECT numer_miejsca, rodzaj_strefy FROM parking WHERE czy_zarezerwowane = 0"
+    cursor.execute(query)
+
+    miejsca = cursor.fetchall()
+
+    result = ""
+    for miejsce in miejsca:
+        result += str(miejsce) + "\n"
+
+    msg = result
+
+    return render_template('showing_free_park.html', msg=msg)
+
+# wyswietlanie wolnych pokoi
+@app.route('/show_free_room', methods=['GET'])
+def show_free_room():
+    db = mysql.connect()
+    cursor = db.cursor(pymysql.cursors.DictCursor)
+    ID_turnusu = request.args.get('ID_turnusu')
+    standart = request.args.get('room_standart')
+
+    query = """
+            SELECT standart, numer_pokoju from pokoje
+            WHERE numer_pokoju NOT IN (SELECT numer_pokoju FROM klienci where ID_turnusu = %s) AND standart = %s
+            LIMIT 1
+        """
+    values = (ID_turnusu, standart)
+    cursor.execute(query, values)
+    result = cursor.fetchall()
+    miejsca = []
+    for row in result:
+        miejsca.append({
+            'standart': row['standart'],
+            'numer': row['numer_pokoju']
+        })
+
+    return render_template('showing_free_room.html', ID_turnusu=ID_turnusu, miejsca=miejsca)
+
+# wyswietlanie zabiegow
+@app.route('/show_my_schedule', methods=['GET'])
+def show_my_schedule():
+    db = mysql.connect()
+    cursor = db.cursor(pymysql.cursors.DictCursor)
+    ID_klienta = request.args.get('idklient')
+
+    # Retrieve the patient's treatment history
+    query = """
+            SELECT t.termin, l.nazwa_zabiegu
+            FROM terminarz_zabiegow t
+            JOIN leczenie l ON t.rodzaj_zabiegu = l.ID_zabiegu
+            WHERE t.ID_pacjenta = %s
+            ORDER BY t.termin DESC
+        """
+    values = (ID_klienta,)
+    cursor.execute(query, values)
+    result = cursor.fetchall()
+    schedules = []
+    for row in result:
+        schedules.append({
+            'termin': row['termin'],
+            'nazwa': row['nazwa_zabiegu']
+        })
+
+    return render_template('showing_my_schedule.html', guest_id=ID_klienta, schedules=schedules)
+
+@app.route('/show_my_booking', methods=['GET'])
+def show_my_booking():
+    db = mysql.connect()
+    cursor = db.cursor(pymysql.cursors.DictCursor)
+    ID_klienta = request.args.get('idklient')
+
+    # Retrieve the patient's treatment history
+    query = """
+            SELECT k.idklient, t.data_przyjazdu, t.data_wyjazdu
+            FROM klienci k
+            JOIN terminarz_noclegów t ON t.ID_turnusu = k.ID_turnusu
+            WHERE k.idklient = %s
+            ORDER BY t.data_przyjazdu DESC
+        """
+    values = (ID_klienta,)
+    cursor.execute(query, values)
+    result = cursor.fetchall()
+    reservations = []
+    for row in result:
+        reservations.append({
+            'id': row['idklient'],
+            'terminp': row['data_przyjazdu'],
+            'terminw': row['data_wyjazdu']
+        })
+
+    return render_template('showing_my_booking.html', guest_id=ID_klienta, reservations=reservations)
+
+# dodawanie miejsc parkingowych
+@app.route('/add_parking', methods=['POST', 'GET'])
+def add_parking():
+    db = mysql.connect()
+    cursor = db.cursor(pymysql.cursors.DictCursor)
+    msg = ''
+
+    if request.method == 'POST' and 'rodzaj_strefy' in request.form:
+        rodzaj_strefy = request.form['rodzaj_strefy']
+        czy_zarezerwowane = 0
+
+        # Retrieve the maximum value of 'numer_miejsca' from the database
+        cursor.execute('SELECT MAX(numer_miejsca) AS max_id FROM parking')
+        result = cursor.fetchone()
+        max_id = result['max_id']
+
+        # Increment the maximum value by one to create a new 'numer_miejsca' value
+        new_id = max_id + 1 if max_id is not None else 1
+
+        # Insert the new parking into the database with the new 'numer_miejsca' value
+        query = "INSERT INTO parking (numer_miejsca, rodzaj_strefy, czy_zarezerwowane) VALUES (%s, %s, %s)"
+        values = (new_id, rodzaj_strefy, czy_zarezerwowane)
+        cursor.execute(query, values)
+        db.commit()
+
+        msg = 'Dodano miejsce parkingowe'
+
+    # Close the database connection and return the response
+    cursor.close()
+    db.close()
+    return render_template('adding_parking.html', msg=msg)
+
+
+# usuwanie miejsc parkingowych
+@app.route('/delete_parking', methods=['GET', 'POST'])
+def delete_parking():
+    db = mysql.connect()
+    cursor = db.cursor(pymysql.cursors.DictCursor)
+    msg = ''
+
+    if request.method == 'POST' and 'id' in request.form:
+        id = request.form['id']
+
+        # Check if the parking is currently reserved
+        query = "SELECT * FROM parking WHERE numer_miejsca = %s"
+        values = (id,)
+        cursor.execute(query, values)
+        reservation = cursor.fetchone()
+
+        if reservation['Czy_zarezerwowane'] == 1:
+            msg = 'Nie można usunąć miejsca, ponieważ jest obecnie zajęte.'
+        else:
+            # Delete the lot from the table
+            query = "SELECT * FROM parking WHERE numer_miejsca = %s"
+            values = (id,)
+            cursor.execute(query, values)
+            deleting = cursor.fetchone()
+
+            if deleting:
+                query = "DELETE FROM parking WHERE numer_miejsca = %s"
+                cursor.execute(query, values)
+                db.commit()
+                msg = 'Usunięto parking'
+            else:
+                msg = 'Nie znaleziono takiego miejsca'
+
+    return render_template('deleting_parking.html', msg=msg)
+
+
+# wyswietlanie miejsc parkingowych
+@app.route('/show_parkings', methods=['GET'])
+def show_parkings():
+    db = mysql.connect()
+    cursor = db.cursor(pymysql.cursors.DictCursor)
+    positions = []
+
+    query = "SELECT * FROM parking"
+    cursor.execute(query)
+
+    miejsca = cursor.fetchall()
+
+    result = ""
+    for miejsce in miejsca:
+        result += str(miejsce) + "\n"
+
+    msg = result
+
+    return render_template('showing_parkings.html', msg=msg)
+
 
 if __name__ == '__main__':
     app.run(debug=True)
