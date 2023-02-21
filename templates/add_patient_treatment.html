@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dodawanie wizyty</title>
+</head>
+<body style="background-color: bisque;">
+    <h1>Dodawanie rezerwacji zabiegu:</h1>
+    {% if msg %}
+        <p>{{ msg }}</p>
+    {% endif %}
+    <form method="post">
+		<label for="id">ID wizyty:</label>
+		<input type="text" id="id" name="ID_wizyty"><br><br>
+
+		<label for="termin">Termin:</label>
+		<input type="text" id="termin" name="termin"><br><br>
+
+		<label for="rodzaj">Rodzaj zabiegu:</label>
+		<input type="text" id="rodzaj" name="rodzaj_zabiegu"><br><br>
+
+		<label for="id_prac">ID pracownika:</label>
+		<input type="text" id="id_prac" name="id_pracownika"><br><br>
+
+		<label for="id_pacj">ID pacjenta:</label>
+		<input type="text" id="id_pacj" name="id_pacjenta"><br><br>
+
+		<input type="submit" value="Dodaj stanowisko">
+	</form>
+
+    <a href ="{{url_for('admin_panel')}}">Wróć do panelu</a>
+</body>
+</html>

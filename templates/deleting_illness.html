@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Delete Illness</title>
+  </head>
+  <body>
+    <body style="background-color: bisque;"></body>
+    <h1>Delete Illness</h1>
+    {% if msg %}
+    <p>{{ msg }}</p>
+    {% endif %}
+    <form method="POST">
+      <label for="id">ID choroby:</label>
+      <input type="text" name="id">
+      <button type="submit">Delete</button>
+    </form>
+    <a href ="{{url_for('admin_panel')}}">Wróć do panelu</a>
+  </body>
+</html>

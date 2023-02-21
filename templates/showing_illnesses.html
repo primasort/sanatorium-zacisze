@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Illnesses</title>
+</head>
+<body>
+    <body style="background-color: bisque;"></body>
+
+	<h1>Lista wszystkich chorób</h1>
+	{% if msg %}
+		<pre>{{ msg }}</pre>
+	{% else %}
+		<p>No illnesses found</p>
+	{% endif %}
+    
+    <a href ="{{url_for('admin_panel')}}">Wróć do panelu</a>
+</body>
+</html>

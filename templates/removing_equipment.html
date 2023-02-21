@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Delete Medical Equipment</title>
+</head>
+<body>
+    <body style="background-color: bisque;"></body>
+	<h1>Usuwanie sprzętu medycznego</h1>
+	{% if msg %}
+		<p>{{ msg }}</p>
+	{% endif %}
+	<form method="POST">
+		<label for="id">Equipment ID:</label>
+		<input type="text" id="id" name="id" required>
+		<br><br>
+		<input type="submit" value="usuń">
+	</form>
+    <a href ="{{url_for('admin_panel')}}">Wróć do panelu</a>
+</body>
+</html>

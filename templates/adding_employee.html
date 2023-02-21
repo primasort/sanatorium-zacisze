@@ -1,0 +1,53 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Dodaj pracownika</title>
+  </head>
+  <body>
+    <body style="background-color: bisque;"></body>
+    <h1>Dodawanie pracownika</h1>
+    {% if error_msg %}
+      <p style="color:red">{{ error_msg }}</p>
+    {% endif %}
+    {% if msg %}
+      <p style="color:green">{{ msg }}</p>
+    {% endif %}
+    <form method="POST" action="/add_employee">
+      <label for="imie">Imię:</label>
+      <input type="text" name="imie" required>
+      <br>
+      <label for="nazwisko">Nazwisko:</label>
+      <input type="text" name="nazwisko" required>
+      <br>
+      <label for="pesel">PESEL:</label>
+      <input type="text" name="pesel" required>
+      <br>
+      <label for="stanowisko">Stanowisko:</label>
+      <select name="stanowisko" required>
+        {% for job_name in job_names %}
+          <option value="{{ job_name }}">{{ job_name }}</option>
+        {% endfor %}
+      </select>
+      <br>
+      <label for="pensja">Pensja:</label>
+      <input type="number" name="pensja" required>
+      <br>
+      <label for="haslo">Hasło:</label>
+      <input type="password" name="haslo" required>
+      <br>
+      <label for="email">Email:</label>
+      <input type="email" name="email" required>
+      <br>
+      <label for="tel">Numer telefonu:</label>
+      <input type="text" name="tel" required>
+      <br>
+      <label for="czy_admin">Czy admin:</label>
+      <input type="radio" name="czy_admin" value="1" required>Tak
+      <input type="radio" name="czy_admin" value="0" required>Nie
+      <br>
+      <input type="submit" value="Dodaj pracownika">
+
+      <a href ="{{url_for('admin_panel')}}">Wróć do panelu</a>
+    </form>
+  </body>
+</html>
