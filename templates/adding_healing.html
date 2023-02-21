@@ -1,0 +1,21 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Dodaj leczenie</title>
+  </head>
+  <body>
+    <body style="background-color: bisque;"></body>
+    <h1>Dodaj nowe leczenie</h1>
+    {% if msg %}
+      <p>{{ msg }}</p>
+    {% endif %}
+    <form method="POST" action="{{ url_for('add_healing') }}">
+      <label for="nazwa">Nazwa zabiegu:</label>
+      <input type="text" name="nazwa" required><br>
+      <label for="choroba">ID choroby:</label>
+      <input type="text" name="choroba"><br>
+      <input type="submit" value="Dodaj">
+    </form>
+    <a href ="{{url_for('admin_panel')}}">Wróć do panelu</a>
+  </body>
+</html>

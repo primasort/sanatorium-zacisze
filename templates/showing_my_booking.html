@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Booking information</title>
+  </head>
+  <body>
+    <body style="background-color: bisque;"></body>
+    <h1>Informacje o zarezerwowanym noclegu: </h1>
+    <form action="{{ url_for('show_my_booking') }}" method="get">
+      <label for="guest_id">Patient ID:</label>
+      <input type="text" name="idklient" id="guest_id">
+      <input type="submit" value="Pokaż rezerwacje">
+    </form>
+    {% if reservations %}
+      <ul>
+        {% for reservation in reservations %}
+          <li>Rezerwacja klienta {{ reservation['id'] }} : {{ reservation['terminp'] }} - {{ reservation['terminw'] }}</li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p>No treatment scheduled for guest {{ guest_id }}.</p>
+    {% endif %}
+
+    <a href ="{{url_for('user_panel')}}">Wróć do panelu</a>
+  </body>
+</html>
+

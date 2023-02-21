@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Usuwanie rezerwacji parkingu</title>
+  </head>
+  <body>
+    <h1>Usuwanie rezerwacji parkingu</h1>
+    {% if msg %}
+      <p>{{ msg }}</p>
+    {% endif %}
+    <form action="/del_my_res" method="POST">
+      <label for="id_klienta">ID klienta:</label>
+      <input type="text" id="id_klienta" name="id_klienta" required><br>
+
+      <label for="haslo">Haslo:</label>
+      <input type="text" id="haslo" name="haslo" required><br>
+
+      <input type="submit" value="Usun rezerwacje">
+    </form>
+  </body>
+</html>

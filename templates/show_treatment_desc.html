@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Treatment description</title>
+  </head>
+  <body>
+    <body style="background-color: bisque;"></body>
+    <h1>Zabieg z opisem: </h1>
+    <form action="{{ url_for('show_treatment_desc') }}" method="get">
+      <label for="treatment_id">Treatment ID:</label>
+      <input type="text" name="ID_zabiegu" id="treatment_id">
+      <input type="submit" value="Pokaż opis">
+    </form>
+    {% if treatments %}
+      <ul>
+        {% for treatment in treatments %}
+          <li>{{ treatment['nazwa'] }} - {{ treatment['opis'] }}</li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p>No description found for treatment {{ treatment_id }}.</p>
+    {% endif %}
+
+    <a href ="{{url_for('worker_panel')}}">Wróć do panelu</a>
+  </body>
+</html>
+

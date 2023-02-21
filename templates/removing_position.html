@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Usuwanie stanowiska</title>
+</head>
+<body>
+    <body style="background-color: bisque;"></body>
+	<h1>Usuwanie stanowiska</h1>
+	{% if msg %}
+		<p>{{ msg }}</p>
+	{% endif %}
+	<form method="post">
+		<div>
+			<label for="nazwa_stanowiska">Nazwa stanowiska:</label>
+			<input type="text" name="nazwa_stanowiska" id="nazwa_stanowiska" required>
+		</div>
+		<button type="submit">Usuń</button>
+	</form>
+
+    <a href ="{{url_for('admin_panel')}}">Wróć do panelu</a>
+</body>
+</html>

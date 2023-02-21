@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Free parking spaces</title>
+  </head>
+  <body>
+    <body style="background-color: bisque;"></body>
+    <h1>Lista miejsc parkingowych</h1>
+	{% if msg %}
+		<pre>{{ msg }}</pre>
+	{% else %}
+		<p>Brak miejsc</p>
+	{% endif %}
+    <a href ="{{url_for('user_panel')}}">Wróć do panelu</a>
+  </body>
+</html>
